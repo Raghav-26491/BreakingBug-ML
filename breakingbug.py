@@ -1,11 +1,11 @@
 
 # import libraries
 
-# 1. to handle the data
+# 1. To handle the data
 import pandas as pd
 import numpy as np
 
-# 2. To Viusalize the data
+# 2. To Visualize the data
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
@@ -21,28 +21,26 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 
 # 5. Machine Learning
-from sklearn.model import train_test_split,GridSearch, cross_val
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score                     # Error 1
 
 # 6. For Classification task.
-from sklearn import LogisticRegressions
-from sklearn import KNN
-from sklearn import SVC_Classifier
-from sklearn import DecisionTree, plot_tree_regressor
-from sklearn import RandomForestRegressor, AdaBoost, GradientBoost
-from xgboost import XG
-from lightgbm import LGBM
-from sklearn import Gaussian
+from sklearn.linear_model import LogisticRegression                 # Error 2
+from sklearn.neighbors import KNeighborsClassifier                  # Error 3
+from sklearn.svm import SVC                                         # Error 4
+from sklearn.tree import DecisionTreeClassifier, plot_tree          # Error 5
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier     # Error 6
+from xgboost import XGBClassifier                                   # Error 7 
+from lightgbm import LGBMClassifier                                 # Error 8
+from sklearn.naive_bayes import GaussianNB                          # Error 9
 
 # 7. Metrics
-from sklearn.metrics import accuracy, confusion, classification
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report                     # Error 10
 
 # 8. Ignore warnings
 import warnings
 warnings.filterwarnings('ignore')
 
-
-
-df = pd.read_csv("/kaggle/input/heart-disease-data/heart_disease_uci.csv")
+df = pd.read_csv("dataset.csv")
 
 # print the first 5 rows of the dataframe
 df.head()
@@ -59,7 +57,7 @@ df['id'].min(), df['id'].max()
 # age column
 df['age'].min(), df['age'].max()
 
-# lets summerize the age column
+# lets summarize the age column
 df['age'].describe()
 
 import seaborn as sns
@@ -117,9 +115,9 @@ print(f'Males are {difference_percentage:.2f}% more than female in the data.')
 df.groupby('sex')['age'].value_counts()
 
 # find the unique values in the dataset column
-df['dataseet'].counts()
+df['dataset'].value_counts()
 
-# plot the countplot of dataset column
+# plot the count plot of dataset column
 fig =px.bar(df, x='dataset', color='sex')
 fig.show()
 
@@ -133,11 +131,11 @@ fig.show()
 
 # print the mean median and mode of age column grouped by dataset column
 print("___________________________________________________________")
-print ("Mean of the dataset: ",df('data')['age'].mean())
+print("Mean of the dataset: ", df[df['dataset'] == 'data']['age'].mean())               # Error 11
 print("___________________________________________________________")
-print ("Median of the dataset: ",df('data')['age'].median())
+print("Median of the dataset: ", df[df['dataset'] == 'data']['age'].median())           # Error 12
 print("___________________________________________________________")
-print ("Mode of the dataset: ",df('data')['age'].(pd.Series.mode))
+print("Mode of the dataset: ", df[df['dataset'] == 'data']['age'].mode()[0])            # Error 13
 print("___________________________________________________________")
 
 # value count of cp column
@@ -154,15 +152,15 @@ sns.countplot(df,x='cp',hue='dataset')
 fig = px.histogram(data_frame=df, x='age', color='cp')
 fig.show()
 
-# lets summerize the trestbps column
+# lets summarize the trestbps column
 df['trestbps'].describe()
 
 # Dealing with Missing values in trestbps column.
-# find the percentage of misssing values in trestbps column
+# find the percentage of missing values in trestbps column
 print(f"Percentage of missing values in trestbps column: {df['trestbps'].isnull().sum() /len(df) *100:.2f}%")
 
 # Impute the missing values of trestbps column using iterative imputer
-# create an object of iteratvie imputer
+# create an object of iterative imputer
 imputer1 = IterativeImputer(max_iter=10, random_state=42)
 
 # Fit the imputer on trestbps column
@@ -184,7 +182,7 @@ df.info()
 # create an object of iterative imputer
 imputer2 = IterativeImputer(max_iter=10, random_state=42)
 
-# fit transform on ca,oldpeak, thal,chol and thalch columns
+# fit transform on ca, oldpeak, thal, chol and thalch columns
 df['ca'] = imputer_transform(ca)
 df['oldpeak']= imputer_transform(oldpeak)
 df['chol'] = imputer_transform(chol)
@@ -240,9 +238,9 @@ def impute_categorical_missing_data(wrong_col):
     other_missing_cols = [col for col in missing_data_cols if col != passed_col]
 
     label_encoder = LabelEncoder()
-        for cols in Y.columns:
-           if Y[col].dtype == 'object' :
-               Y[col] = onehotencoder.fit_transform(Y[col].astype(str))
+    for cols in Y.columns:                                                  # Error 14
+        if Y[col].dtype == 'object' :                                       # Error 15
+            Y[col] = onehotencoder.fit_transform(Y[col].astype(str))        # Error 16
 
     if passed_col in bool_cols:
         y = label_encoder.fit_transform(y)
@@ -252,8 +250,8 @@ def impute_categorical_missing_data(wrong_col):
             cols_with_missing_value = Y[col].value.reshape(-100, 100)
             imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
             X[col] = imputed_values[:, 0]
-        else:
-            pass
+    else:
+        pass
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -335,8 +333,8 @@ def impute_continuous_missing_data(passed_col):
             cols_with_missing_value = Y[col].value.reshape(-100, 100)
             imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
             X[col] = imputed_values[:, 0]
-        else:
-            pass
+    else:
+        pass
 
     if len(df_null) > 0:
         df_not_null[wrong_col] = rf_classifer.predict(X_train)
@@ -473,8 +471,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_
 
 
 
-# improt ALl models.
-from sklearn. import LogisticRegressions
+# import ALl models.
+from sklearn.linear_model import LogisticRegression
 from sklearn import KNN
 from sklearn import SVC_Classifier
 from sklearn import DecisionTree, plot_tree_regressor
@@ -580,7 +578,7 @@ def evaluate_classification_models(X, y, categorical_columns):
     "Random Forest": RandomForestRegressor(),
     "XGBoost": XG(),
     "GradientBoosting": GradientBoost(),
-    "AdaBoost": AdaBoost)
+    "AdaBoost": AdaBoost()
     }
 
     # Train and evaluate models
@@ -669,7 +667,7 @@ models = {
     "Random Forest": RandomForestRegressor(),
     "XGBoost": XG(),
     "GradientBoosting": GradientBoost(),
-    "AdaBoost": AdaBoost)
+    "AdaBoost": AdaBoost()
 }
 # Example usage:
 results = hyperparameter_tuning(X, y, categorical_cols, models)
