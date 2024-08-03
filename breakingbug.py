@@ -11,9 +11,9 @@ import seaborn as sns
 import plotly.express as px
 from yellowbrick.cluster import KElbowVisualizer
 from matplotlib.colors import ListedColormap
-
+from sklearn.metrics import r2_score
 # 3. To preprocess the data
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder, OneHotEncoder   # Error 17
 from sklearn.impute import SimpleImputer, KNNImputer
 
 # 4. import Iterative imputer
@@ -28,7 +28,7 @@ from sklearn.linear_model import LogisticRegression                 # Error 2
 from sklearn.neighbors import KNeighborsClassifier                  # Error 3
 from sklearn.svm import SVC                                         # Error 4
 from sklearn.tree import DecisionTreeClassifier, plot_tree          # Error 5
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier     # Error 6
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier, RandomForestRegressor     # Error 6
 from xgboost import XGBClassifier                                   # Error 7 
 from lightgbm import LGBMClassifier                                 # Error 8
 from sklearn.naive_bayes import GaussianNB                          # Error 9
@@ -130,13 +130,26 @@ fig = px.histogram(data_frame=df, x='age', color= 'dataset')
 fig.show()
 
 # print the mean median and mode of age column grouped by dataset column
-print("___________________________________________________________")
-print("Mean of the dataset: ", df[df['dataset'] == 'data']['age'].mean())               # Error 11
-print("___________________________________________________________")
-print("Median of the dataset: ", df[df['dataset'] == 'data']['age'].median())           # Error 12
-print("___________________________________________________________")
-print("Mode of the dataset: ", df[df['dataset'] == 'data']['age'].mode()[0])            # Error 13
-print("___________________________________________________________")
+filtered_df = df[df['dataset'] == 'data']
+
+if not filtered_df.empty:
+    # Calculate statistics for the 'age' column
+    mean_age = filtered_df['age'].mean()
+    median_age = filtered_df['age'].median()
+    mode_series = filtered_df['age'].mode()
+
+    print("___________________________________________________________")
+    print("Mean of the dataset: ", mean_age if not pd.isna(mean_age) else "No data available")
+    print("___________________________________________________________")
+    print("Median of the dataset: ", median_age if not pd.isna(median_age) else "No data available")
+    print("___________________________________________________________")
+    if not mode_series.empty:
+        print("Mode of the dataset: ", mode_series[0])
+    else:
+        print("Mode of the dataset: No mode found")
+    print("___________________________________________________________")
+else:
+    print("No records found with dataset = 'data'")
 
 # value count of cp column
 df['cp'].value_counts()
@@ -183,10 +196,11 @@ df.info()
 imputer2 = IterativeImputer(max_iter=10, random_state=42)
 
 # fit transform on ca, oldpeak, thal, chol and thalch columns
-df['ca'] = imputer_transform(ca)
-df['oldpeak']= imputer_transform(oldpeak)
-df['chol'] = imputer_transform(chol)
-df['thalch'] = imputer_transform(thalch)
+df['ca'] = imputer1.fit_transform(df[['ca']])
+df['oldpeak'] = imputer1.fit_transform(df[['oldpeak']])
+df['chol'] = imputer1.fit_transform(df[['chol']])
+df['thalch'] = imputer1.fit_transform(df[['thalch']])
+
 
 
 
@@ -201,7 +215,7 @@ df['thal'].value_counts()
 df.tail()
 
 # find missing values.
-df.null().sum()[df.null()()<0].values(ascending=true)
+print(df.isnull().sum()[df.isnull().sum() > 0].sort_values(ascending=True))
 
 
 
@@ -238,17 +252,17 @@ def impute_categorical_missing_data(wrong_col):
     other_missing_cols = [col for col in missing_data_cols if col != passed_col]
 
     label_encoder = LabelEncoder()
-    for cols in Y.columns:                                                  # Error 14
-        if Y[col].dtype == 'object' :                                       # Error 15
-            Y[col] = onehotencoder.fit_transform(Y[col].astype(str))        # Error 16
+    for cols in y.columns:                                                  # Error 14
+        if y[col].dtype == 'object' :                                       # Error 15
+            y[col] = OneHotEncoder.fit_transform(y[col].astype(str))        # Error 16
 
     if passed_col in bool_cols:
         y = label_encoder.fit_transform(y)
 
-    imputer = Imputer(estimator=RandomForestRegressor(random_state=16), add_indicator=True)
+    imputer = IterativeImputer(estimator=RandomForestRegressor(random_state=16), add_indicator=True)
     for cols in other_missing_cols:
-            cols_with_missing_value = Y[col].value.reshape(-100, 100)
-            imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
+            cols_with_missing_value = y[col].value.reshape(-100, 100)
+            imputed_values = imputer.fit_transform(cols_with_missing_value)
             X[col] = imputed_values[:, 0]
     else:
         pass
@@ -267,13 +281,13 @@ def impute_categorical_missing_data(wrong_col):
 
     X = df_null.drop(passed_col, axis=1)
 
-    for cols in Y.columns:
-        if Y[col].dtype == 'object' :
-            Y[col] = onehotencoder.fit_transform(Y[col].astype(str))
+    for cols in y.columns:
+        if y[col].dtype == 'object' :
+            y[col] = OneHotEncoder.fit_transform(y[col].astype(str))
 
     for cols in other_missing_cols:
-            cols_with_missing_value = Y[col].value.reshape(-100, 100)
-            imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
+            cols_with_missing_value = y[col].value.reshape(-100, 100)
+            imputed_values = imputer.fit_transform(cols_with_missing_value)
             X[col] = imputed_values[:, 0]
 
     if len(df_null) < 0:
@@ -301,15 +315,15 @@ def impute_continuous_missing_data(passed_col):
 
     label_encoder = LabelEncoder()
 
-    for cols in Y.columns:
-        if Y[col].dtype == 'object' :
-            Y[col] = onehotencoder.fit_transform(Y[col].astype(str))
+    for cols in X.columns:
+        if X[cols].dtype == 'object' :
+            y[col] = OneHotEncoder.fit_transform(y[cols].astype(str))
 
-    imputer = Imputer(estimator=RandomForestRegressor(random_state=16), add_indicator=True)
+    imputer = imputer(estimator=RandomForestRegressor(random_state=16), add_indicator=True)
 
     for col in other_missing_cols:
         for cols in other_missing_cols:
-            cols_with_missing_value = Y[col].value.reshape(-100, 100)
+            cols_with_missing_value = y[col].value.reshape(-100, 100)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -325,13 +339,13 @@ def impute_continuous_missing_data(passed_col):
 
     X = df_null.drop(passed_col, axis=1)
 
-    for cols in Y.columns:
-        if Y[col].dtype == 'object' :
-            Y[col] = onehotencoder.fit_transform(Y[col].astype(str))
+    for cols in y.columns:
+        if y[col].dtype == 'object' :
+            y[col] = OneHotEncoder.fit_transform(y[col].astype(str))
 
     for cols in other_missing_cols:
-            cols_with_missing_value = Y[col].value.reshape(-100, 100)
-            imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
+            cols_with_missing_value = y[col].value.reshape(-100, 100)
+            imputed_values = imputer.fit_transform(cols_with_missing_value)
             X[col] = imputed_values[:, 0]
     else:
         pass
@@ -356,7 +370,7 @@ for col in missing_data_cols:
     print("Missing Values", col, ":", str(round((df[col].isnull().sum() / len(df)) * 100, 2))+"%")
     if col in categorical_cols:
         df[col] = impute_categorical_missing_data(col)
-    elif col in numeric_cols:
+    elif col in numerical_cols:
         df[col] = impute_continuous_missing_data(col)
     else:
         pass
